@@ -1,19 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  Tent, CheckSquare, BookOpen, User, Settings, 
-  Plus, ChevronRight, ChevronLeft, Image as ImageIcon, 
-  Palette, Box, Layout, Save, Share, Download, Upload,
-  Smile, Frown, Meh, Search, Hash, X, Trash2, Quote
+  Wind, Layers, PenTool, Heart, Settings, Plus, 
+  ChevronRight, ChevronLeft, Image as ImageIcon, 
+  CheckCircle, Trash2, X, Save, Upload, Download,
+  Anchor, Smile, Frown, Meh, MoreHorizontal, Share
 } from 'lucide-react';
 
-// --- 1. 数据持久化 Hook (LocalStorage) ---
+// --- 1. 核心数据 Hook (保持不变，确保数据不丢) ---
 const useStickyState = (defaultValue, key) => {
   const [value, setValue] = useState(() => {
     try {
       const stickyValue = window.localStorage.getItem(key);
       return stickyValue !== null ? JSON.parse(stickyValue) : defaultValue;
     } catch (error) {
-      console.error('Storage Error:', error);
       return defaultValue;
     }
   });
@@ -23,403 +22,421 @@ const useStickyState = (defaultValue, key) => {
   return [value, setValue];
 };
 
-// --- 2. 样式系统 (静谧/自然/克制) ---
-const STYLES = {
-  bg: 'bg-[#FDFCF8]', // 暖白纸张色
-  card: 'bg-white shadow-sm border border-stone-100 rounded-2xl',
-  text: 'text-stone-800',
-  subText: 'text-stone-400',
-  accent: 'bg-stone-800 text-white', // 克制的黑色主色
-  accentLight: 'bg-stone-100 text-stone-600',
-  input: 'w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 text-stone-700 focus:outline-none focus:border-stone-400 transition-colors placeholder:text-stone-300',
-  btnPrimary: 'w-full bg-stone-800 text-white font-medium py-3 rounded-xl active:scale-95 transition-transform flex items-center justify-center gap-2',
-  btnSecondary: 'w-full bg-stone-100 text-stone-600 font-medium py-3 rounded-xl active:scale-95 transition-transform',
-  tag: (active) => `px-3 py-1 rounded-full text-xs font-medium transition-colors ${active ? 'bg-stone-800 text-white' : 'bg-stone-100 text-stone-500'}`,
+// --- 2. iOS 设计系统 (HIG Guidelines) ---
+const IOS = {
+  // 背景色：iOS 标准分组背景灰
+  bg: 'bg-[#F2F2F7]', 
+  // 卡片：白色，大圆角，极轻的阴影
+  card: 'bg-white rounded-[20px] shadow-[0_1px_2px_rgba(0,0,0,0.04)] border border-black/[0.02]',
+  // 主按钮：深藏青/黑，点击时缩小
+  primaryBtn: 'bg-[#1C1C1E] text-white active:scale-95 transition-all duration-200 shadow-md shadow-black/10',
+  // 次级按钮：浅灰背景
+  secondaryBtn: 'bg-[#E5E5EA] text-[#1C1C1E] active:bg-[#D1D1D6] transition-colors duration-200',
+  // 文本系统
+  type: {
+    largeTitle: 'text-[34px] font-bold tracking-tight text-[#1C1C1E] leading-tight',
+    title2: 'text-[22px] font-semibold tracking-tight text-[#1C1C1E]',
+    headline: 'text-[17px] font-semibold text-[#1C1C1E] leading-snug',
+    body: 'text-[17px] font-normal text-[#3A3A3C] leading-relaxed',
+    caption1: 'text-[13px] font-medium text-[#8E8E93]',
+    caption2: 'text-[11px] font-medium text-[#AEAEB2]',
+  },
+  // 输入框
+  input: 'w-full bg-[#F2F2F7] rounded-[12px] px-4 py-3.5 text-[17px] placeholder-[#8E8E93] focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20 transition-all',
 };
 
-// --- 3. 辅助组件 ---
-const Chip = ({ label, active, onClick }) => (
-  <button onClick={onClick} className={STYLES.tag(active)}>
-    {label}
-  </button>
-);
+// --- 3. 页面组件 ---
 
-const SectionTitle = ({ title, sub }) => (
-  <div className="mb-6">
-    <h2 className="text-2xl font-bold tracking-tight text-stone-800">{title}</h2>
-    {sub && <p className="text-sm text-stone-400 mt-1 font-light">{sub}</p>}
-  </div>
-);
+// A. 今日 (Home) - 还原截图 1
+const HomeView = ({ tasks, actions }) => {
+  const featuredTask = tasks.find(t => !t.completed);
 
-const EmptyState = ({ text }) => (
-  <div className="py-12 text-center">
-    <div className="w-16 h-16 bg-stone-50 rounded-full flex items-center justify-center mx-auto mb-3">
-      <Box className="text-stone-300" />
+  return (
+    <div className="px-6 pt-14 pb-32 animate-fade-in">
+      {/* 顶部极简标题 */}
+      <div className="flex justify-center mb-12 opacity-60">
+        <span className="text-[11px] font-bold tracking-[2px] uppercase">Growth Console</span>
+      </div>
+
+      <div className="flex flex-col items-center text-center">
+        {featuredTask ? (
+          // 有任务状态
+          <div className="w-full mt-8 animate-slide-up">
+             <div className="mb-8 flex justify-center">
+                <div className="w-20 h-20 bg-[#007AFF]/10 rounded-full flex items-center justify-center text-[#007AFF] animate-pulse-slow">
+                  <Wind size={40} strokeWidth={1.5} />
+                </div>
+             </div>
+             <h2 className={IOS.type.title2}>今日专注</h2>
+             <p className={`${IOS.type.caption1} mt-2 mb-10`}>AI 为你精选了最重要的 1 件事</p>
+             
+             <div className={`${IOS.card} p-8 text-left relative overflow-hidden group active:scale-[0.99] transition-transform duration-300`}>
+               <div className="absolute top-0 left-0 w-1.5 h-full bg-[#007AFF]"></div>
+               <span className="text-[11px] font-bold text-[#007AFF] uppercase tracking-wider mb-3 block">Top Priority</span>
+               <h3 className="text-[20px] font-medium text-[#1C1C1E] mb-8 leading-relaxed line-clamp-3">{featuredTask.title}</h3>
+               
+               <button 
+                 onClick={() => actions.toggleTask(featuredTask.id)} 
+                 className="w-full py-3 rounded-xl border border-[#E5E5EA] flex items-center justify-center gap-2 text-[15px] text-[#8E8E93] hover:text-[#007AFF] hover:border-[#007AFF]/30 transition-all active:bg-[#F2F2F7]"
+               >
+                 <CheckCircle size={18} /> <span>完成任务</span>
+               </button>
+             </div>
+          </div>
+        ) : (
+          // 空状态 (完全还原截图文案)
+          <div className="w-full mt-8 animate-fade-in">
+            <div className="mb-6 flex justify-center">
+              <Wind size={64} strokeWidth={1} className="text-[#C7C7CC]" />
+            </div>
+            
+            <h1 className={`${IOS.type.title2} mb-3`}>你好，设计师。</h1>
+            <p className={`${IOS.type.body} text-[#8E8E93] mb-8`}>任务池暂时是空的。</p>
+
+            <p className={`${IOS.type.caption1} max-w-[260px] mx-auto leading-relaxed mb-8`}>
+              我会根据时间节点和你今天的状态，<br/>
+              帮你从任务池里选出最重要的 1 件事。
+            </p>
+
+            <div className="bg-white px-4 py-3 rounded-xl shadow-sm border border-black/[0.02] mb-10 inline-block">
+              <p className={IOS.type.caption2}>
+                AI 只会从【任务池】里挑选，不会凭空生成任务。
+              </p>
+            </div>
+
+            <button 
+              onClick={() => actions.navigate('tasks')}
+              className={`w-full h-[52px] rounded-[14px] ${IOS.primaryBtn} text-[17px] font-semibold tracking-wide`}
+            >
+              先丢一件事进任务池
+            </button>
+          </div>
+        )}
+      </div>
     </div>
-    <p className="text-stone-400 text-sm">{text}</p>
-  </div>
-);
+  );
+};
 
-// --- 4. 核心页面组件 ---
+// B. 任务池 (Tasks) - 还原截图 2
+const TasksView = ({ tasks, actions }) => {
+  const [isAdding, setIsAdding] = useState(false);
+  const [inputVal, setInputVal] = useState('');
 
-// 首页：设计训练营
-const HomeView = ({ data, actions }) => {
-  const [step, setStep] = useState(0); // 0=未开始, 1-5=训练中
-  const [draft, setDraft] = useState({
-    img: null, atmosphere: '', keywords: '', color: '', material: '', composition: '', quote: ''
-  });
-
-  const ATMOSPHERES = ['静谧', '松弛', '温暖', '清冷', '自然', '克制', '前卫'];
-
-  const finishTraining = () => {
-    // 1. 保存到案例库
-    const newCase = {
-      id: Date.now(),
-      ...draft,
-      date: new Date().toLocaleDateString(),
-      tags: [draft.atmosphere]
-    };
-    actions.addCase(newCase);
-
-    // 2. 如果有金句，保存到金句库
-    if (draft.quote) {
-      actions.addQuote({
-        id: Date.now() + 1,
-        content: draft.quote,
-        source: '今日训练',
-        tags: [draft.atmosphere]
-      });
+  const handleAdd = () => {
+    if (inputVal.trim()) {
+      actions.addTask(inputVal);
+      setInputVal('');
+      setIsAdding(false);
     }
-
-    // 3. 完成
-    setStep(0);
-    setDraft({ img: null, atmosphere: '', keywords: '', color: '', material: '', composition: '', quote: '' });
-    alert('🎉 训练完成！已沉淀到素材库。');
   };
 
-  if (step === 0) {
+  return (
+    <div className="px-5 pt-16 pb-32 min-h-full bg-white">
+      <div className="flex justify-between items-start mb-2">
+        <div>
+          <h1 className={IOS.type.largeTitle}>任务池</h1>
+          <p className={`${IOS.type.caption1} mt-1`}>倒空大脑，先收集，再行动</p>
+        </div>
+        <button 
+          onClick={() => setIsAdding(true)}
+          className="bg-[#1C1C1E] text-white px-5 py-2 rounded-full text-[15px] font-semibold active:scale-90 transition-transform shadow-lg shadow-black/10"
+        >
+          + 入池
+        </button>
+      </div>
+
+      {isAdding && (
+        <div className="mt-6 mb-4 animate-slide-down">
+          <input 
+            autoFocus
+            className={`${IOS.input} bg-[#F2F2F7]`}
+            placeholder="写下任务，回车保存..."
+            value={inputVal}
+            onChange={e => setInputVal(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleAdd()}
+            onBlur={() => !inputVal && setIsAdding(false)}
+          />
+        </div>
+      )}
+
+      {tasks.length === 0 ? (
+        <div className="mt-24 text-center space-y-12 animate-fade-in">
+          <p className={`${IOS.type.body} text-[#8E8E93]`}>
+            先把脑子里的事丢进来，不用排序。<br/>
+            哪怕一句话也行。
+          </p>
+          
+          <div className="space-y-3 px-2">
+            {['找一张案例做分析', '整理厨房一段', '联系一个供应商/客户'].map(text => (
+              <button 
+                key={text} 
+                onClick={() => actions.addTask(text)}
+                className="w-full py-4 border border-[#E5E5EA] rounded-[16px] text-[15px] text-[#3A3A3C] font-medium active:bg-[#F2F2F7] active:scale-[0.98] transition-all"
+              >
+                {text}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="mt-8 space-y-0 divide-y divide-[#E5E5EA] border-t border-[#E5E5EA]">
+          {tasks.map(task => (
+            <div key={task.id} className="py-5 flex items-start justify-between group animate-fade-in">
+              <div className="flex items-start gap-4 pr-4">
+                <button 
+                  onClick={() => actions.toggleTask(task.id)}
+                  className={`mt-0.5 w-6 h-6 rounded-full border-[1.5px] flex-shrink-0 flex items-center justify-center transition-all ${
+                    task.completed ? 'bg-[#34C759] border-[#34C759]' : 'border-[#C7C7CC]'
+                  }`}
+                >
+                  {task.completed && <CheckCircle size={14} className="text-white" strokeWidth={3} />}
+                </button>
+                <span className={`text-[17px] leading-relaxed ${task.completed ? 'text-[#C7C7CC] line-through decoration-1' : 'text-[#1C1C1E]'}`}>
+                  {task.title}
+                </span>
+              </div>
+              <button onClick={() => actions.deleteTask(task.id)} className="text-[#D1D1D6] active:text-[#FF3B30] p-1 -mr-2">
+                <Trash2 size={18} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// C. 设计 (Design) - 还原截图 3
+const DesignView = ({ actions }) => {
+  const [isTraining, setIsTraining] = useState(false);
+  const [step, setStep] = useState(1);
+  const [formData, setFormData] = useState({ img: null, atmosphere: '', feelings: '', analysis: '', quote: '' });
+
+  const TAGS = ['全部', '静谧', '松弛', '温暖', '清冷', '自然', '克制'];
+
+  const handleFinish = () => {
+    setIsTraining(false);
+    setStep(1);
+    setFormData({ img: null, atmosphere: '', feelings: '', analysis: '', quote: '' });
+    alert("训练完成，已归档至案例库");
+  };
+
+  // 训练模式 (全屏 Modal)
+  if (isTraining) {
     return (
-      <div className="space-y-6 animate-fade-in">
-        <SectionTitle title="设计训练营" sub="积累你的设计直觉" />
-        
-        {/* 顶部入口 */}
-        <div className="grid grid-cols-2 gap-4">
-          <button onClick={() => actions.navigate('terms')} className={`${STYLES.card} p-4 flex flex-col items-center justify-center gap-2 hover:border-stone-300 transition-colors`}>
-            <BookOpen className="text-stone-400" />
-            <span className="text-sm font-medium">术语库</span>
-          </button>
-          <button onClick={() => actions.navigate('quotes')} className={`${STYLES.card} p-4 flex flex-col items-center justify-center gap-2 hover:border-stone-300 transition-colors`}>
-            <Quote className="text-stone-400" />
-            <span className="text-sm font-medium">金句库</span>
-          </button>
+      <div className="fixed inset-0 bg-white z-50 flex flex-col animate-slide-up">
+        {/* Modal Header */}
+        <div className="px-6 pt-14 pb-4 flex justify-between items-center bg-white/80 backdrop-blur-xl border-b border-[#F2F2F7]">
+          <button onClick={() => setIsTraining(false)} className="text-[#8E8E93] text-[17px]">取消</button>
+          <span className="font-semibold text-[17px]">今日训练 ({step}/5)</span>
+          <div className="w-8"></div>
         </div>
 
-        {/* 核心卡片 */}
-        <div className="bg-stone-900 rounded-2xl p-6 text-white shadow-xl shadow-stone-900/10">
-          <div className="flex justify-between items-start mb-6">
-            <div>
-              <h3 className="text-xl font-bold mb-1">今天只做这一件事</h3>
-              <p className="text-stone-400 text-xs">每日 15 分钟刻意练习</p>
+        <div className="flex-1 overflow-y-auto px-6 py-8">
+          {step === 1 && (
+            <div className="flex flex-col items-center justify-center h-[60vh] animate-fade-in">
+              <div className="w-full aspect-[4/3] bg-[#F2F2F7] rounded-[20px] flex flex-col items-center justify-center text-[#8E8E93] active:bg-[#E5E5EA] transition-colors cursor-pointer">
+                <ImageIcon size={48} strokeWidth={1} className="mb-3 opacity-50" />
+                <span className="text-[15px] font-medium">点击上传案例图</span>
+              </div>
             </div>
-            <Tent className="text-stone-500" />
-          </div>
-          
-          <ul className="space-y-3 text-sm text-stone-300 mb-8 font-light">
-            <li className="flex gap-2"><div className="w-5 h-5 rounded-full bg-stone-800 flex items-center justify-center text-xs">1</div> 选一张喜欢的案例图</li>
-            <li className="flex gap-2"><div className="w-5 h-5 rounded-full bg-stone-800 flex items-center justify-center text-xs">2</div> 提取主氛围与感受词</li>
-            <li className="flex gap-2"><div className="w-5 h-5 rounded-full bg-stone-800 flex items-center justify-center text-xs">3</div> 拆解色彩/材质/构图</li>
-            <li className="flex gap-2"><div className="w-5 h-5 rounded-full bg-stone-800 flex items-center justify-center text-xs">4</div> 提炼一句设计金句</li>
-          </ul>
+          )}
+          {step === 2 && (
+            <div className="mt-4 animate-fade-in">
+              <h3 className={IOS.type.title2}>选一个主氛围词</h3>
+              <div className="flex flex-wrap gap-3 mt-8">
+                {TAGS.slice(1).map(t => (
+                  <button key={t} onClick={() => setFormData({...formData, atmosphere: t})}
+                    className={`px-6 py-3 rounded-full text-[15px] font-medium transition-all ${
+                      formData.atmosphere === t ? 'bg-[#1C1C1E] text-white shadow-lg shadow-black/20' : 'bg-[#F2F2F7] text-[#1C1C1E]'
+                    }`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {step >= 3 && (
+            <div className="mt-4 space-y-6 animate-fade-in">
+               <h3 className={IOS.type.title2}>
+                 {step === 3 ? '写 3-5 个感受词' : step === 4 ? '色彩/材质/构图分析' : '最后写一句金句'}
+               </h3>
+               <textarea 
+                 autoFocus
+                 className="w-full bg-[#F2F2F7] rounded-[16px] p-5 text-[17px] h-64 resize-none focus:outline-none leading-relaxed"
+                 placeholder={step === 5 ? "留白不是空洞，而是..." : "点击输入..."}
+                 value={step===3?formData.feelings:step===4?formData.analysis:formData.quote}
+                 onChange={e => {
+                   const val = e.target.value;
+                   if(step===3) setFormData({...formData, feelings: val});
+                   else if(step===4) setFormData({...formData, analysis: val});
+                   else setFormData({...formData, quote: val});
+                 }}
+               />
+            </div>
+          )}
+        </div>
 
-          <button onClick={() => setStep(1)} className="w-full bg-white text-stone-900 font-bold py-3 rounded-xl active:scale-95 transition-transform">
-            开始今日训练
+        <div className="px-6 pb-10 pt-4 bg-white border-t border-[#F2F2F7]">
+          <button onClick={() => step < 5 ? setStep(step + 1) : handleFinish()} className={`w-full h-[52px] rounded-[14px] ${IOS.primaryBtn} text-[17px] font-semibold`}>
+            {step < 5 ? '下一步' : '完成训练'}
           </button>
         </div>
       </div>
     );
   }
 
-  // 训练流程 Step 1-5
   return (
-    <div className="min-h-[80vh] flex flex-col justify-between animate-slide-up">
-      <div>
-        <div className="flex items-center justify-between mb-6">
-          <button onClick={() => setStep(step - 1)} className="p-2 -ml-2 text-stone-400"><ChevronLeft /></button>
-          <span className="text-sm font-bold text-stone-400">Step {step} / 5</span>
-          <div className="w-8" />
+    <div className="px-0 pt-16 pb-32 h-full overflow-y-auto bg-white">
+      <div className="px-5 mb-6 flex items-center justify-between">
+        <h1 className={IOS.type.largeTitle}>设计训练营</h1>
+        <div className="flex gap-3">
+          <button className="px-3 py-1.5 text-[13px] font-medium text-[#007AFF]">术语库</button>
+          <button className="px-3 py-1.5 text-[13px] font-medium text-[#007AFF]">金句库</button>
+          <button className="w-8 h-8 bg-[#F2F2F7] rounded-full flex items-center justify-center text-[#1C1C1E]">
+            <Plus size={18}/>
+          </button>
         </div>
-
-        {step === 1 && (
-          <div className="space-y-4">
-            <h3 className="text-xl font-bold">1. 选择案例</h3>
-            <p className="text-stone-500 text-sm">上传一张今天打动你的图片</p>
-            <div className="aspect-square bg-stone-100 rounded-2xl border-2 border-dashed border-stone-200 flex flex-col items-center justify-center text-stone-400 relative overflow-hidden">
-              {draft.img ? (
-                <div className="w-full h-full bg-stone-200 flex items-center justify-center text-stone-500">
-                   {/* 这里简化处理，实际可以使用 FileReader */}
-                   已选择图片 (模拟)
-                </div>
-              ) : (
-                <>
-                  <ImageIcon size={32} className="mb-2" />
-                  <span className="text-xs">点击上传 (模拟)</span>
-                </>
-              )}
-              <input type="button" onClick={() => setDraft({...draft, img: true})} className="absolute inset-0 opacity-0 cursor-pointer" />
-            </div>
-          </div>
-        )}
-
-        {step === 2 && (
-          <div className="space-y-6">
-            <h3 className="text-xl font-bold">2. 定义氛围</h3>
-            <div>
-              <label className="text-xs font-bold text-stone-400 uppercase mb-3 block">主氛围</label>
-              <div className="flex flex-wrap gap-2">
-                {ATMOSPHERES.map(attr => (
-                  <Chip key={attr} label={attr} active={draft.atmosphere === attr} onClick={() => setDraft({...draft, atmosphere: attr})} />
-                ))}
-              </div>
-            </div>
-            <div>
-              <label className="text-xs font-bold text-stone-400 uppercase mb-3 block">感受词 (3-5个)</label>
-              <input 
-                type="text" 
-                placeholder="例如：静谧、透气、粗糙..."
-                className={STYLES.input}
-                value={draft.keywords}
-                onChange={e => setDraft({...draft, keywords: e.target.value})}
-              />
-            </div>
-          </div>
-        )}
-
-        {step === 3 && (
-          <div className="space-y-4">
-            <h3 className="text-xl font-bold">3. 维度拆解</h3>
-            <div className="space-y-3">
-              <div className="relative">
-                <Palette size={16} className="absolute left-4 top-4 text-stone-400" />
-                <input className={`${STYLES.input} pl-10`} placeholder="色彩分析..." value={draft.color} onChange={e => setDraft({...draft, color: e.target.value})} />
-              </div>
-              <div className="relative">
-                <Box size={16} className="absolute left-4 top-4 text-stone-400" />
-                <input className={`${STYLES.input} pl-10`} placeholder="材质/肌理..." value={draft.material} onChange={e => setDraft({...draft, material: e.target.value})} />
-              </div>
-              <div className="relative">
-                <Layout size={16} className="absolute left-4 top-4 text-stone-400" />
-                <input className={`${STYLES.input} pl-10`} placeholder="构图/布局..." value={draft.composition} onChange={e => setDraft({...draft, composition: e.target.value})} />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {step === 4 && (
-          <div className="space-y-4">
-            <h3 className="text-xl font-bold">4. 提炼金句</h3>
-            <p className="text-stone-500 text-sm">一句话总结这次的设计洞察</p>
-            <textarea 
-              className={`${STYLES.input} h-32 resize-none pt-4`} 
-              placeholder="例如：'留白不是空洞，而是呼吸的空间。'"
-              value={draft.quote}
-              onChange={e => setDraft({...draft, quote: e.target.value})}
-            />
-          </div>
-        )}
-        
-        {step === 5 && (
-           <div className="text-center py-10 space-y-4">
-             <div className="w-20 h-20 bg-stone-900 rounded-full flex items-center justify-center text-white mx-auto mb-4">
-               <CheckSquare size={32} />
-             </div>
-             <h3 className="text-2xl font-bold">Ready?</h3>
-             <p className="text-stone-500">此次训练将被归档到案例库</p>
-           </div>
-        )}
       </div>
 
-      <button onClick={() => step < 5 ? setStep(step + 1) : finishTraining()} className={STYLES.btnPrimary}>
-        {step < 5 ? <>下一步 <ChevronRight size={16} /></> : '完成训练'}
-      </button>
-    </div>
-  );
-};
-
-// 任务池页面
-const TasksView = ({ tasks, actions }) => {
-  const [filter, setFilter] = useState('全部');
-  const [isAdding, setIsAdding] = useState(false);
-  const [newTask, setNewTask] = useState({ title: '', tag: '默认', priority: '普通' });
-
-  const TAGS = ['全部', '静谧', '自然', '学习', '复盘'];
-
-  const handleAdd = () => {
-    if(!newTask.title) return;
-    actions.addTask({ ...newTask, id: Date.now(), status: 'todo' });
-    setIsAdding(false);
-    setNewTask({ title: '', tag: '默认', priority: '普通' });
-  };
-
-  const filteredTasks = filter === '全部' ? tasks : tasks.filter(t => t.tag === filter);
-
-  return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex justify-between items-end">
-        <SectionTitle title="任务池" sub="待办与计划" />
-        <button onClick={() => setIsAdding(!isAdding)} className="p-2 bg-stone-900 text-white rounded-full mb-6 shadow-lg">
-          <Plus size={20} />
-        </button>
+      {/* 氛围 Scroll */}
+      <div className="flex gap-3 overflow-x-auto px-5 pb-4 no-scrollbar mb-4">
+        {TAGS.map((t, i) => (
+          <button key={t} className={`whitespace-nowrap px-4 py-1.5 rounded-full text-[13px] font-medium shadow-sm border ${i === 0 ? 'bg-[#1C1C1E] text-white border-[#1C1C1E]' : 'bg-white border-[#E5E5EA] text-[#8E8E93]'}`}>
+            {t}
+          </button>
+        ))}
       </div>
 
-      {isAdding && (
-        <div className={`${STYLES.card} p-4 mb-6 space-y-3 animate-slide-down border-stone-300`}>
-          <input className={STYLES.input} placeholder="任务标题..." autoFocus value={newTask.title} onChange={e => setNewTask({...newTask, title: e.target.value})} />
-          <div className="flex gap-2 overflow-x-auto pb-2">
-            {['静谧', '自然', '学习', '复盘'].map(t => (
-              <Chip key={t} label={t} active={newTask.tag === t} onClick={() => setNewTask({...newTask, tag: t})} />
+      <div className="px-5">
+        <div className={`${IOS.card} p-6 relative overflow-hidden`}>
+          <div className="flex items-center gap-2 mb-5">
+            <PenTool size={18} className="text-[#0A84FF]" />
+            <h3 className={IOS.type.headline}>今天只做这一件事</h3>
+          </div>
+          
+          <div className="space-y-4 mb-10">
+            {[
+              '上传1张喜欢的案例图', '选1个主氛围词', '写3-5个感受词', '用色彩/材质/构图解释它', '最后写一句金句。'
+            ].map((text, i) => (
+              <div key={i} className="flex items-start gap-3 text-[15px] text-[#3A3A3C] leading-normal">
+                <span className="text-[#C7C7CC] font-mono">0{i+1}</span> {text}
+              </div>
             ))}
           </div>
-          <button onClick={handleAdd} className={STYLES.btnPrimary}>添加任务</button>
-        </div>
-      )}
 
-      <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-        {TAGS.map(t => <Chip key={t} label={t} active={filter === t} onClick={() => setFilter(t)} />)}
-      </div>
-
-      <div className="space-y-3">
-        {filteredTasks.length === 0 ? <EmptyState text="暂无任务" /> : filteredTasks.map(task => (
-          <div key={task.id} className={`${STYLES.card} p-4 flex items-center justify-between group`}>
-            <div className="flex items-center gap-3">
-              <button 
-                onClick={() => actions.toggleTask(task.id)}
-                className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${task.status === 'done' ? 'bg-stone-400 border-stone-400' : 'border-stone-300'}`}
-              >
-                {task.status === 'done' && <CheckSquare size={12} className="text-white" />}
-              </button>
-              <div>
-                <p className={`font-medium ${task.status === 'done' ? 'text-stone-400 line-through' : 'text-stone-800'}`}>{task.title}</p>
-                <span className="text-xs text-stone-400 bg-stone-100 px-1.5 py-0.5 rounded">{task.tag}</span>
-              </div>
-            </div>
-            <button onClick={() => actions.deleteTask(task.id)} className="text-stone-300 hover:text-red-400"><Trash2 size={16}/></button>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-// 案例库页面
-const CasesView = ({ cases }) => {
-  return (
-    <div className="space-y-6 animate-fade-in">
-      <SectionTitle title="设计案例" sub="你的审美资产" />
-      <div className="space-y-4">
-        {cases.length === 0 ? <EmptyState text="完成今日训练以积累案例" /> : cases.map(c => (
-          <div key={c.id} className={`${STYLES.card} overflow-hidden`}>
-            <div className="h-32 bg-stone-200 flex items-center justify-center text-stone-400">
-               {/* 占位图 */}
-               <ImageIcon />
-            </div>
-            <div className="p-4">
-              <div className="flex justify-between items-start mb-2">
-                <span className="text-xs font-bold bg-stone-100 text-stone-600 px-2 py-1 rounded uppercase">{c.atmosphere}</span>
-                <span className="text-xs text-stone-300">{c.date}</span>
-              </div>
-              <p className="text-stone-500 text-sm mb-3">"{c.keywords}"</p>
-              {c.quote && (
-                <div className="bg-stone-50 p-3 rounded-lg text-xs text-stone-600 italic border-l-2 border-stone-300">
-                  {c.quote}
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-// 设置/我的 页面
-const MineView = ({ data, actions }) => {
-  const [mood, setMood] = useState(null);
-
-  const exportData = () => {
-    const dataStr = JSON.stringify(data, null, 2);
-    const blob = new Blob([dataStr], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `growth_console_backup_${new Date().toLocaleDateString()}.json`;
-    link.click();
-  };
-
-  const importData = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const imported = JSON.parse(e.target.result);
-        actions.importAll(imported);
-        alert('导入成功！');
-      } catch (err) {
-        alert('文件格式错误');
-      }
-    };
-    reader.readAsText(file);
-  };
-
-  const addMood = (type) => {
-    actions.addEmotion({ id: Date.now(), type, date: new Date().toLocaleString() });
-    setMood(type);
-    setTimeout(() => setMood(null), 2000);
-  };
-
-  return (
-    <div className="space-y-8 animate-fade-in">
-      <SectionTitle title="我的" sub="数据与状态" />
-
-      {/* 情绪记录 */}
-      <div className={STYLES.card + " p-6 text-center"}>
-        <h3 className="text-sm font-bold text-stone-400 uppercase mb-4">此刻状态</h3>
-        <div className="flex justify-center gap-8">
-          {[
-            { icon: Smile, label: '开心', color: 'text-amber-500' },
-            { icon: Meh, label: '平淡', color: 'text-stone-400' },
-            { icon: Frown, label: '压力', color: 'text-rose-400' },
-          ].map(m => (
-            <button key={m.label} onClick={() => addMood(m.label)} className="flex flex-col items-center gap-2 transition-transform hover:scale-110">
-              <m.icon size={32} className={m.color} />
-              <span className="text-xs text-stone-500">{m.label}</span>
-            </button>
-          ))}
-        </div>
-        {mood && <p className="text-xs text-stone-400 mt-4 animate-bounce">已记录: {mood}</p>}
-      </div>
-
-      {/* 数据管理 */}
-      <div className="space-y-3">
-        <h3 className="text-sm font-bold text-stone-400 uppercase pl-1">数据管理</h3>
-        <button onClick={exportData} className={STYLES.btnSecondary}>
-          <Download size={18} /> 导出全部数据 (JSON)
-        </button>
-        <div className="relative">
-          <button className={STYLES.btnSecondary}>
-            <Upload size={18} /> 导入数据 (覆盖)
+          <button onClick={() => setIsTraining(true)} className={`w-full h-[46px] rounded-[12px] ${IOS.primaryBtn} text-[15px] font-semibold`}>
+            开始今日训练
           </button>
-          <input type="file" onChange={importData} className="absolute inset-0 opacity-0 cursor-pointer" />
         </div>
-        <p className="text-xs text-stone-300 text-center px-4">
-          数据存储在本地浏览器中。清除缓存会丢失数据，请定期导出备份。
-        </p>
+      </div>
+    </div>
+  );
+};
+
+// D. 情绪 (Emotion) - 还原截图 4
+const EmotionView = ({ actions }) => {
+  const [val, setVal] = useState(5);
+  
+  return (
+    <div className="px-5 pt-16 pb-32 h-full overflow-y-auto bg-white">
+      <div className="flex justify-between items-center mb-10">
+        <h1 className={IOS.type.largeTitle}>情绪与边界</h1>
+        <button className="bg-[#F2F2F7] text-[#8E8E93] px-3 py-1.5 rounded-lg text-[12px] font-medium flex items-center gap-1 active:bg-[#E5E5EA]">
+          <Anchor size={12}/> 安全锚
+        </button>
       </div>
 
-      <div className="pt-8 text-center">
-         <div className="inline-block px-3 py-1 bg-stone-100 rounded-full text-xs text-stone-400">
-           Growth Console v1.0
-         </div>
+      <div className={`${IOS.card} p-6 border border-[#F2F2F7] shadow-lg shadow-black/[0.02]`}>
+        <div className="mb-10">
+          <div className="flex justify-between mb-5">
+            <span className={IOS.type.caption1}>情绪温度</span>
+            <span className="text-[15px] font-medium text-[#1C1C1E] font-mono">{val}/10</span>
+          </div>
+          <input 
+            type="range" min="0" max="10" value={val} onChange={e => setVal(e.target.value)}
+            className="w-full h-1.5 bg-[#F2F2F7] rounded-full appearance-none cursor-pointer accent-[#1C1C1E]"
+          />
+        </div>
+
+        <div className="mb-10">
+          <span className={`${IOS.type.caption1} block mb-4`}>此刻感受</span>
+          <div className="flex flex-wrap gap-2.5">
+            {['焦虑', '平静', '难过', '愤怒', '兴奋', '空虚', '麻木', '感激'].map(f => (
+              <button key={f} className="px-4 py-2 rounded-[10px] border border-[#E5E5EA] text-[14px] text-[#3A3A3C] active:bg-[#1C1C1E] active:text-white active:border-[#1C1C1E] transition-colors">
+                {f}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mb-10">
+          <span className={`${IOS.type.caption1} block mb-4`}>影响最大的事</span>
+          <textarea 
+            className="w-full bg-[#F2F2F7] rounded-[14px] p-4 text-[15px] h-28 resize-none placeholder-[#C7C7CC] focus:outline-none focus:bg-[#E5E5EA] transition-colors"
+            placeholder="发生了什么？"
+          />
+        </div>
+
+        <button className={`w-full h-[46px] rounded-[12px] ${IOS.primaryBtn} text-[15px] font-semibold`}>
+          保存记录
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// --- 4. 设置弹窗 (Settings) ---
+const SettingsModal = ({ isOpen, onClose, data, actions }) => {
+  if (!isOpen) return null;
+  
+  const exportJSON = () => {
+    const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `growth_backup_${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+  };
+
+  const importJSON = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const json = JSON.parse(e.target.result);
+          actions.importData(json);
+          alert('导入成功');
+        } catch(err) { alert('文件错误'); }
+      };
+      reader.readAsText(file);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center animate-fade-in">
+      <div className="bg-white w-full sm:w-[320px] sm:rounded-[24px] rounded-t-[24px] p-6 pb-10 animate-slide-up shadow-2xl">
+        <div className="flex justify-between items-center mb-8">
+          <h2 className={IOS.type.title2}>设置</h2>
+          <button onClick={onClose} className="p-2 bg-[#F2F2F7] rounded-full text-[#8E8E93] hover:bg-[#E5E5EA]"><X size={18}/></button>
+        </div>
+        
+        <div className="space-y-4">
+          <button onClick={exportJSON} className="w-full flex items-center justify-between p-4 bg-[#F2F2F7] rounded-[14px] text-[15px] font-medium text-[#1C1C1E] active:bg-[#E5E5EA] transition-colors">
+             <span>导出数据备份</span> <Download size={18} className="text-[#8E8E93]"/>
+          </button>
+          <div className="relative">
+            <button className="w-full flex items-center justify-between p-4 bg-[#F2F2F7] rounded-[14px] text-[15px] font-medium text-[#1C1C1E] active:bg-[#E5E5EA] transition-colors">
+               <span>导入数据 (覆盖)</span> <Upload size={18} className="text-[#8E8E93]"/>
+            </button>
+            <input type="file" onChange={importJSON} className="absolute inset-0 opacity-0 cursor-pointer"/>
+          </div>
+          <p className="text-[12px] text-[#8E8E93] px-2 pt-2 leading-relaxed text-center">
+            数据仅保存在本地浏览器。<br/>请定期导出 JSON 文件以防丢失。
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -428,82 +445,62 @@ const MineView = ({ data, actions }) => {
 // --- 5. 主程序 ---
 export default function App() {
   const [activeTab, setActiveTab] = useState('home');
-  
-  // 数据池
+  const [showSettings, setShowSettings] = useState(false);
+
   const [tasks, setTasks] = useStickyState([], 'gc_tasks');
   const [cases, setCases] = useStickyState([], 'gc_cases');
-  const [terms, setTerms] = useStickyState([], 'gc_terms');
-  const [quotes, setQuotes] = useStickyState([], 'gc_quotes');
-  const [emotions, setEmotions] = useStickyState([], 'gc_emotions');
 
-  // 全局动作
   const actions = {
     navigate: setActiveTab,
-    addTask: (t) => setTasks([t, ...tasks]),
-    toggleTask: (id) => setTasks(tasks.map(t => t.id === id ? { ...t, status: t.status === 'done' ? 'todo' : 'done' } : t)),
+    addTask: (title) => setTasks([{ id: Date.now(), title, completed: false }, ...tasks]),
+    toggleTask: (id) => setTasks(tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t)),
     deleteTask: (id) => setTasks(tasks.filter(t => t.id !== id)),
     addCase: (c) => setCases([c, ...cases]),
-    addQuote: (q) => setQuotes([q, ...quotes]),
-    addEmotion: (e) => setEmotions([e, ...emotions]),
-    importAll: (data) => {
-      if(data.tasks) setTasks(data.tasks);
-      if(data.cases) setCases(data.cases);
-      if(data.terms) setTerms(data.terms);
-      if(data.quotes) setQuotes(data.quotes);
-      if(data.emotions) setEmotions(data.emotions);
-    }
+    importData: (d) => { if(d.tasks) setTasks(d.tasks); if(d.cases) setCases(d.cases); }
   };
 
-  const allData = { tasks, cases, terms, quotes, emotions };
-
   return (
-    <div className={`min-h-screen ${STYLES.bg} ${STYLES.text} font-sans selection:bg-stone-200 pb-24`}>
-      <main className="max-w-md mx-auto min-h-screen relative p-6">
+    <div className={`min-h-screen ${IOS.bg} font-sans selection:bg-[#E5E5EA] text-[#1C1C1E]`}>
+      <main className="max-w-md mx-auto min-h-screen relative bg-white shadow-2xl overflow-hidden flex flex-col">
         
-        {activeTab === 'home' && <HomeView data={allData} actions={actions} />}
-        {activeTab === 'tasks' && <TasksView tasks={tasks} actions={actions} />}
-        {activeTab === 'cases' && <CasesView cases={cases} />}
-        {activeTab === 'mine' && <MineView data={allData} actions={actions} />}
-        
-        {/* 术语库和金句库作为简单的子页面展示（略，为保持代码简洁，这里用 Tab 切换演示） */}
-        {activeTab === 'terms' && (
-             <div className="animate-fade-in">
-                 <button onClick={() => setActiveTab('home')} className="mb-4 text-stone-400 flex items-center gap-1"><ChevronLeft size={16}/> 返回</button>
-                 <SectionTitle title="术语库" sub="专业词汇积累" />
-                 <EmptyState text="待开发：这里将展示术语列表" />
-             </div>
-        )}
-        {activeTab === 'quotes' && (
-             <div className="animate-fade-in">
-                 <button onClick={() => setActiveTab('home')} className="mb-4 text-stone-400 flex items-center gap-1"><ChevronLeft size={16}/> 返回</button>
-                 <SectionTitle title="金句库" sub="设计哲思" />
-                 <div className="space-y-4">
-                    {quotes.map(q => (
-                        <div key={q.id} className={`${STYLES.card} p-4 italic text-stone-600`}>"{q.content}"</div>
-                    ))}
-                    {quotes.length === 0 && <EmptyState text="完成训练以收集金句" />}
-                 </div>
-             </div>
+        {/* 设置按钮 (仅 Home 显示) */}
+        {activeTab === 'home' && (
+          <button 
+            onClick={() => setShowSettings(true)} 
+            className="absolute top-6 right-6 z-30 text-[#C7C7CC] hover:text-[#1C1C1E] transition-colors"
+          >
+            <Settings size={24} strokeWidth={1.5} />
+          </button>
         )}
 
-      </main>
-
-      {/* 底部导航栏 (Mobile Tab Bar) */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-stone-200 pb-safe">
-        <div className="max-w-md mx-auto flex justify-around items-center h-16 px-2">
-          <NavBtn icon={Tent} label="训练营" active={activeTab === 'home'} onClick={() => setActiveTab('home')} />
-          <NavBtn icon={CheckSquare} label="任务" active={activeTab === 'tasks'} onClick={() => setActiveTab('tasks')} />
-          <NavBtn icon={BookOpen} label="案例" active={activeTab === 'cases'} onClick={() => setActiveTab('cases')} />
-          <NavBtn icon={Settings} label="我的" active={activeTab === 'mine'} onClick={() => setActiveTab('mine')} />
+        {/* 页面内容区域 */}
+        <div className="flex-1 overflow-hidden relative">
+          {activeTab === 'home' && <HomeView tasks={tasks} actions={actions} />}
+          {activeTab === 'tasks' && <TasksView tasks={tasks} actions={actions} />}
+          {activeTab === 'design' && <DesignView cases={cases} actions={actions} />}
+          {activeTab === 'emotion' && <EmotionView actions={actions} />}
         </div>
-      </nav>
+
+        {/* 底部 Tab Bar (iOS 毛玻璃风格) */}
+        <nav className="h-[88px] bg-white/85 backdrop-blur-xl border-t border-black/[0.05] flex justify-around items-start pt-3 z-40 pb-safe absolute bottom-0 w-full">
+          <TabItem icon={Wind} label="今日" active={activeTab === 'home'} onClick={() => setActiveTab('home')} />
+          <TabItem icon={Layers} label="任务池" active={activeTab === 'tasks'} onClick={() => setActiveTab('tasks')} />
+          <TabItem icon={PenTool} label="设计" active={activeTab === 'design'} onClick={() => setActiveTab('design')} />
+          <TabItem icon={Heart} label="情绪" active={activeTab === 'emotion'} onClick={() => setActiveTab('emotion')} />
+        </nav>
+
+        <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} data={{tasks, cases}} actions={actions} />
+      </main>
     </div>
   );
 }
 
-const NavBtn = ({ icon: Icon, label, active, onClick }) => (
-  <button onClick={onClick} className={`flex flex-col items-center justify-center w-full h-full gap-1 ${active ? 'text-stone-900' : 'text-stone-300'}`}>
-    <Icon size={22} strokeWidth={active ? 2.5 : 2} />
-    <span className="text-[10px] font-medium">{label}</span>
+const TabItem = ({ icon: Icon, label, active, onClick }) => (
+  <button 
+    onClick={onClick} 
+    className={`w-16 flex flex-col items-center gap-1.5 transition-colors duration-200 ${active ? 'text-[#1C1C1E]' : 'text-[#AEAEB2]'}`}
+  >
+    <Icon size={26} strokeWidth={active ? 2.3 : 1.8} />
+    <span className="text-[10px] font-medium tracking-wide">{label}</span>
   </button>
 );
